@@ -11,6 +11,7 @@ type User struct {
 }
 
 type Task struct {
+	ID          int
 	Description string
 	Reward      int
 }

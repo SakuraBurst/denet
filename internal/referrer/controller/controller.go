@@ -20,9 +20,9 @@ type userDatabase interface {
 
 type taskDataBase interface {
 	CompleteTask(taskID, userID int) (int, error)
-	CreateNewTask(task *types.Task) error
-	GetTaskById(taskID int) (*types.User, error)
-	ChangeTaskReward(task *types.Task) error
+	CreateNewTask(task *types.Task) (int, error)
+	GetTaskById(taskID int) (*types.Task, error)
+	UpdateTaskReward(id, newReward int) error
 }
 
 type Controller struct {
@@ -72,6 +72,18 @@ func (c *Controller) CompleteTask(userID int, taskID int) (int, error) {
 
 func (c *Controller) Referrer(id int) error {
 	return c.userDatabase.RewardUser(id, defaultRefererReward)
+}
+
+func (c *Controller) CreateNewTask(task *types.Task) (int, error) {
+	return c.taskDataBase.CreateNewTask(task)
+}
+
+func (c *Controller) GetTask(id int) (*types.Task, error) {
+	return c.taskDataBase.GetTaskById(id)
+}
+
+func (c *Controller) UpdateTaskReward(id, newReward int) error {
+	return c.taskDataBase.UpdateTaskReward(id, newReward)
 }
 
 func createJWT(id int) (string, error) {
