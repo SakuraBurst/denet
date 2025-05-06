@@ -1,0 +1,1 @@
+alter table tasks drop constraint unique_description;

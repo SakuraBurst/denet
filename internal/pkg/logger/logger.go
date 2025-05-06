@@ -30,6 +30,5 @@ func InitLogger() (io.Closer, error) {
 	Logger = &zapLogger{
 		Logger: zap.New(logCore, zap.AddCallerSkip(1), zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel)),
 	}
-
 	return Logger, nil
 }

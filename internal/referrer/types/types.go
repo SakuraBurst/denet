@@ -7,6 +7,7 @@ type User struct {
 	UserName       string
 	Password       []byte
 	ReferrerCode   string
+	Balance        int
 	CompletedTasks []Task
 }
 

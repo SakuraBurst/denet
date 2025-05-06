@@ -1,0 +1,3 @@
+create table users (id serial primary key, first_name varchar not null , last_name varchar not null , user_name varchar not null unique , password varchar not null, balance int not null );
+create table tasks (id serial primary key, description varchar not null, reward int not null);
+create table tasks_to_users (id serial primary key, user_id int references users(id), task_id int references tasks(id));

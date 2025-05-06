@@ -1,0 +1,1 @@
+alter table tasks_to_users add constraint unique_tasks unique (user_id, task_id);

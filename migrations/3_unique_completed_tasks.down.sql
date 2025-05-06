@@ -1,0 +1,1 @@
+alter table tasks_to_users drop constraint unique_tasks;

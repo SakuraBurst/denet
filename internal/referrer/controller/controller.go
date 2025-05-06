@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"time"
 
 	"github.com/SakuraBurst/denet/internal/referrer/types"
@@ -12,17 +13,17 @@ import (
 const defaultRefererReward = 100
 
 type userDatabase interface {
-	CreateNewUser(user *types.User) error
-	GetUserById(userID int) (*types.User, error)
-	GetUserByUserName(userName string) (*types.User, error)
-	RewardUser(userID, rewardValue int) error
+	CreateNewUser(ctx context.Context, user *types.User) error
+	GetFullUserInfo(ctx context.Context, userID int) (*types.User, error)
+	GetUserByUserName(ctx context.Context, userName string) (*types.User, error)
+	RewardUser(ctx context.Context, userID, rewardValue int) error
 }
 
 type taskDataBase interface {
-	CompleteTask(taskID, userID int) (int, error)
-	CreateNewTask(task *types.Task) (int, error)
-	GetTaskById(taskID int) (*types.Task, error)
-	UpdateTaskReward(id, newReward int) error
+	CompleteTask(ctx context.Context, taskID, userID int) (int, error)
+	CreateNewTask(ctx context.Context, task *types.Task) (int, error)
+	GetTaskById(ctx context.Context, taskID int) (*types.Task, error)
+	UpdateTaskReward(ctx context.Context, id, newReward int) error
 }
 
 type Controller struct {
@@ -31,21 +32,21 @@ type Controller struct {
 	jwtSecret    []byte
 }
 
-func (c *Controller) CreateNewUser(user *types.User) error {
+func (c *Controller) CreateNewUser(ctx context.Context, user *types.User) error {
 	hashedPass, err := cryptPassword(user.Password)
 	if err != nil {
 		return errors.Wrap(err, "cryptPassword failed: ")
 	}
 	user.Password = hashedPass
-	err = c.userDatabase.CreateNewUser(user)
+	err = c.userDatabase.CreateNewUser(ctx, user)
 	if err != nil {
 		return errors.Wrap(err, "userDatabase.CreateNewUser failed: ")
 	}
 	return nil
 }
 
-func (c *Controller) AuthorizeUser(user *types.User) (string, error) {
-	user, err := c.userDatabase.GetUserByUserName(user.UserName)
+func (c *Controller) AuthorizeUser(ctx context.Context, user *types.User) (string, error) {
+	user, err := c.userDatabase.GetUserByUserName(ctx, user.UserName)
 	if err != nil {
 		return "", errors.Wrap(err, "userDatabase.GetUserByUserName failed: ")
 
@@ -58,32 +59,32 @@ func (c *Controller) AuthorizeUser(user *types.User) (string, error) {
 	return createJWT(user.ID)
 }
 
-func (c *Controller) GetUserStatus(id int) (*types.User, error) {
-	user, err := c.userDatabase.GetUserById(id)
+func (c *Controller) GetUserStatus(ctx context.Context, id int) (*types.User, error) {
+	user, err := c.userDatabase.GetFullUserInfo(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "serDatabase.GetUserById failed: ")
 	}
 	return user, nil
 }
 
-func (c *Controller) CompleteTask(userID int, taskID int) (int, error) {
-	return c.taskDataBase.CompleteTask(taskID, userID)
+func (c *Controller) CompleteTask(ctx context.Context, userID int, taskID int) (int, error) {
+	return c.taskDataBase.CompleteTask(ctx, taskID, userID)
 }
 
-func (c *Controller) Referrer(id int) error {
-	return c.userDatabase.RewardUser(id, defaultRefererReward)
+func (c *Controller) Referrer(ctx context.Context, id int) error {
+	return c.userDatabase.RewardUser(ctx, id, defaultRefererReward)
 }
 
-func (c *Controller) CreateNewTask(task *types.Task) (int, error) {
-	return c.taskDataBase.CreateNewTask(task)
+func (c *Controller) CreateNewTask(ctx context.Context, task *types.Task) (int, error) {
+	return c.taskDataBase.CreateNewTask(ctx, task)
 }
 
-func (c *Controller) GetTask(id int) (*types.Task, error) {
-	return c.taskDataBase.GetTaskById(id)
+func (c *Controller) GetTask(ctx context.Context, id int) (*types.Task, error) {
+	return c.taskDataBase.GetTaskById(ctx, id)
 }
 
-func (c *Controller) UpdateTaskReward(id, newReward int) error {
-	return c.taskDataBase.UpdateTaskReward(id, newReward)
+func (c *Controller) UpdateTaskReward(ctx context.Context, id, newReward int) error {
+	return c.taskDataBase.UpdateTaskReward(ctx, id, newReward)
 }
 
 func createJWT(id int) (string, error) {
