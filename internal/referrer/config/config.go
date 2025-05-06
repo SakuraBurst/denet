@@ -10,6 +10,7 @@ import (
 type Config struct {
 	HttpPort    string `yaml:"http_port" env-required:"true"`
 	DataBaseURL string `yaml:"data_base_url" env-required:"true"`
+	JWTSecret   string `yaml:"jwt_secret" env-required:"true"`
 }
 
 func MustLoad() *Config {
