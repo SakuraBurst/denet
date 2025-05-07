@@ -49,10 +49,10 @@ func (d *DB) CreateNewUser(ctx context.Context, user *types.UserRequest, referre
 	return nil
 }
 
-func (d *DB) GetFullUserInfo(ctx context.Context, userID int) (*types.User, error) {
-	row := d.Conn.QueryRow(ctx, "select id, first_name, last_name, user_name, password, balance from users where id = $1", userID)
-	user := &types.User{}
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Password, &user.Balance)
+func (d *DB) GetFullUserInfo(ctx context.Context, userID int) (*types.FullUser, error) {
+	row := d.Conn.QueryRow(ctx, "select id, first_name, last_name, user_name, password, balance, referrer_code from users where id = $1", userID)
+	user := &types.FullUser{}
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Password, &user.Balance, &user.ReferrerCode)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrUserNotExist
 	}
@@ -64,7 +64,7 @@ func (d *DB) GetFullUserInfo(ctx context.Context, userID int) (*types.User, erro
 		return nil, errors.Wrap(err, "conn.Query failed: ")
 	}
 	defer rows.Close()
-	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Task])
+	result, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[types.Task])
 	if err != nil {
 		return nil, errors.Wrap(err, "pgx.CollectRows failed: ")
 	}
@@ -98,6 +98,18 @@ func (d *DB) GetUserByReferrerCode(ctx context.Context, referrerCode string) (*t
 		return nil, errors.Wrap(err, "row.Scan failed: ")
 	}
 	return user, nil
+}
+
+func (d *DB) GetTopUsersByBalance(ctx context.Context, limit int) ([]*types.User, error) {
+	rows, err := d.Conn.Query(ctx, "select * from users order by balance limit $1", limit)
+	if err != nil {
+		return nil, errors.Wrap(err, "Conn.Query failed: ")
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[types.User])
+	if err != nil {
+		return nil, errors.Wrap(err, "pgx.CollectRows failed: ")
+	}
+	return result, nil
 }
 
 func (d *DB) CompleteTask(ctx context.Context, taskID, userID int) (int, error) {
@@ -134,13 +146,14 @@ func (d *DB) CompleteTask(ctx context.Context, taskID, userID int) (int, error) 
 	}
 
 	var taskToUserId int
-	row = tx.QueryRow(ctx, "insert into tasks_to_users (task_id, user_id) values ($1, $2) on conflict do nothing returning id")
+	row = tx.QueryRow(ctx, "insert into tasks_to_users (task_id, user_id) values ($1, $2) on conflict do nothing returning id", taskID, userID)
 	err = row.Scan(&taskToUserId)
 	if err != nil {
 		rollback()
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, ErrAlreadyCompletedTask
 		}
+		return 0, err
 	}
 
 	_, err = tx.Exec(ctx, "update users set balance = $2 where id = $1", userID, balance+reward)
@@ -175,6 +188,18 @@ func (d *DB) GetTaskById(ctx context.Context, taskID int) (*types.Task, error) {
 		return nil, errors.Wrap(err, "row.Scan failed: ")
 	}
 	return task, nil
+}
+
+func (d *DB) GetAllTasks(ctx context.Context) ([]*types.Task, error) {
+	rows, err := d.Conn.Query(ctx, "select * from tasks")
+	if err != nil {
+		return nil, errors.Wrap(err, "Conn.Query failed: ")
+	}
+	result, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[types.Task])
+	if err != nil {
+		return nil, errors.Wrap(err, "pgx.CollectRows failed: ")
+	}
+	return result, nil
 }
 
 func (d *DB) UpdateTaskReward(ctx context.Context, id, newReward int) error {

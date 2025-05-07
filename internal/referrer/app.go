@@ -41,7 +41,7 @@ func (a *App) gracefulShutdown(sisChan chan os.Signal) error {
 func NewApp(cfg *config.Config) *App {
 	log, err := logger.InitLogger()
 	if err != nil {
-
+		panic(err)
 	}
 	db, err := database.NewDB(cfg, log)
 	if err != nil {

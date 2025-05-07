@@ -13,13 +13,15 @@ import (
 )
 
 const defaultRefererReward = 100
+const defaultTopUsersLimit = 5
 
 type userDatabase interface {
 	CreateNewUser(ctx context.Context, user *types.UserRequest, referrerCode string) error
-	GetFullUserInfo(ctx context.Context, userID int) (*types.User, error)
+	GetFullUserInfo(ctx context.Context, userID int) (*types.FullUser, error)
 	GetUserByUserName(ctx context.Context, userName string) (*types.User, error)
 	GetUserByReferrerCode(ctx context.Context, referrerCode string) (*types.User, error)
 	RewardUser(ctx context.Context, userID, rewardValue int) error
+	GetTopUsersByBalance(ctx context.Context, limit int) ([]*types.User, error)
 }
 
 type taskToUserDatabase interface {
@@ -30,6 +32,7 @@ type taskDataBase interface {
 	CreateNewTask(ctx context.Context, task *types.Task) (int, error)
 	GetTaskById(ctx context.Context, taskID int) (*types.Task, error)
 	UpdateTaskReward(ctx context.Context, id, newReward int) error
+	GetAllTasks(ctx context.Context) ([]*types.Task, error)
 }
 
 type Controller struct {
@@ -77,12 +80,28 @@ func (c *Controller) AuthorizeUser(ctx context.Context, user *types.UserRequest)
 	return createJWT(foundUser.ID)
 }
 
-func (c *Controller) GetUserStatus(ctx context.Context, id int) (*types.User, error) {
+func (c *Controller) GetUserStatus(ctx context.Context, id int) (*types.FullUser, error) {
 	user, err := c.userDatabase.GetFullUserInfo(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "userDatabase.GetUserById failed: ")
 	}
 	return user, nil
+}
+
+func (c *Controller) GetTopUsers(ctx context.Context) ([]*types.User, error) {
+	users, err := c.userDatabase.GetTopUsersByBalance(ctx, defaultTopUsersLimit)
+	if err != nil {
+		return nil, errors.Wrap(err, "userDatabase.GetTopUsersByBalance failed: ")
+	}
+	return users, nil
+}
+
+func (c *Controller) GetAllTasks(ctx context.Context) ([]*types.Task, error) {
+	users, err := c.taskDataBase.GetAllTasks(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "taskDataBase.GetAllTasks failed: ")
+	}
+	return users, nil
 }
 
 func (c *Controller) CompleteTask(ctx context.Context, userID int, taskID int) (int, error) {

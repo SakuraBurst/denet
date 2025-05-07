@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoadPath("./config/config.yaml")
+	// "./config/config.yaml"
+	cfg := config.MustLoad()
 	a := referrer.NewApp(cfg)
 	a.Run()
 }

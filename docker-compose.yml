@@ -1,0 +1,46 @@
+version: '3.9'
+
+volumes:
+    postgres-storage:
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-storage:/var/lib/postgresql/data
+    external_links:
+      - postgres
+
+
+  migration:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_migrations
+    container_name: migrations
+    command: ["./migrator", "--storage=postgres://postgres:password@postgres:5432/postgres?sslmode=disable", "--migrations=./migrations"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+        context: .
+        dockerfile: ./Dockerfile
+    container_name: backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '8080:8080'
