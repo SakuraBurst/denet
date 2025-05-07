@@ -2,17 +2,32 @@ package types
 
 type User struct {
 	ID             int
-	FirstName      string
-	LastName       string
-	UserName       string
-	Password       []byte
-	ReferrerCode   string
-	Balance        int
-	CompletedTasks []Task
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	UserName       string `json:"user_name"`
+	Password       string `json:"-"`
+	ReferrerCode   string `json:"referrer_code"`
+	Balance        int    `json:"balance"`
+	CompletedTasks []Task `json:"completed_tasks"`
+}
+
+type UserRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	UserName  string `json:"user_name"`
+	Password  string `json:"password"`
+}
+
+type CompleteTaskRequest struct {
+	TaskId int
+}
+
+type ReferrerRequest struct {
+	ReferrerCode string `json:"referrer_code"`
 }
 
 type Task struct {
-	ID          int
-	Description string
-	Reward      int
+	ID          int    `json:"id"`
+	Description string `json:"description"`
+	Reward      int    `json:"reward"`
 }

@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"time"
 
+	"github.com/SakuraBurst/denet/internal/referrer/config"
 	"github.com/SakuraBurst/denet/internal/referrer/types"
 	"github.com/go-faster/errors"
 	"github.com/jackc/pgx/v5"
@@ -15,8 +17,27 @@ type DB struct {
 	logger *zap.Logger
 }
 
-func (d *DB) CreateNewUser(ctx context.Context, user *types.User) error {
-	row := d.Conn.QueryRow(ctx, "insert into users (first_name, last_name, user_name, password, balance) values ($1, $2, $3, $4, $5) on conflict (user_name) do nothing returning id", user.FirstName, user.LastName, user.UserName, user.Password, user.Balance)
+func NewDB(cfg *config.Config, logger *zap.Logger) (*DB, error) {
+	conn, err := initDatabase(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "InitDatabase failed")
+	}
+	return &DB{Conn: conn, logger: logger.Named("db")}, nil
+}
+
+func initDatabase(cfg *config.Config) (*pgxpool.Pool, error) {
+	ctx, cl := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cl()
+	pool, err := pgxpool.New(ctx, cfg.DataBaseURL)
+	if err != nil {
+
+		return nil, errors.Wrap(err, "pgxpool.New failed")
+	}
+	return pool, nil
+}
+
+func (d *DB) CreateNewUser(ctx context.Context, user *types.UserRequest, referrerCode string) error {
+	row := d.Conn.QueryRow(ctx, "insert into users (first_name, last_name, user_name, password, balance, referrer_code) values ($1, $2, $3, $4, $5, $6) on conflict (user_name) do nothing returning id", user.FirstName, user.LastName, user.UserName, user.Password, 0, referrerCode)
 	var id int
 	err := row.Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -54,6 +75,20 @@ func (d *DB) GetFullUserInfo(ctx context.Context, userID int) (*types.User, erro
 // GetUserByUserName возвращает весего юзера на всякий случай, вдруг где-то еще пригодиться
 func (d *DB) GetUserByUserName(ctx context.Context, userName string) (*types.User, error) {
 	row := d.Conn.QueryRow(ctx, "select id, first_name, last_name, user_name, password, balance from users where user_name = $1", userName)
+	user := &types.User{}
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Password, &user.Balance)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrUserNotExist
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "row.Scan failed: ")
+	}
+	return user, nil
+}
+
+// GetUserByReferrerCode возвращает весего юзера на всякий случай, вдруг где-то еще пригодиться
+func (d *DB) GetUserByReferrerCode(ctx context.Context, referrerCode string) (*types.User, error) {
+	row := d.Conn.QueryRow(ctx, "select id, first_name, last_name, user_name, password, balance from users where referrer_code = $1", referrerCode)
 	user := &types.User{}
 	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Password, &user.Balance)
 	if errors.Is(err, pgx.ErrNoRows) {
