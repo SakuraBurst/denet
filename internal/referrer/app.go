@@ -6,9 +6,9 @@ import (
 
 	"github.com/SakuraBurst/denet/internal/pkg/logger"
 	"github.com/SakuraBurst/denet/internal/referrer/config"
-	"github.com/SakuraBurst/denet/internal/referrer/controller"
 	"github.com/SakuraBurst/denet/internal/referrer/database"
 	"github.com/SakuraBurst/denet/internal/referrer/router"
+	"github.com/SakuraBurst/denet/internal/referrer/service"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +47,7 @@ func NewApp(cfg *config.Config) *App {
 	if err != nil {
 		panic(err)
 	}
-	c := controller.NewController(cfg, db, db, db, func() error {
+	c := service.NewController(cfg, db, db, db, func() error {
 		db.Conn.Close()
 		return nil
 	})

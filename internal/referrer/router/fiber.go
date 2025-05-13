@@ -46,7 +46,7 @@ func (r *HttpRouter) Run() error {
 
 func (r *HttpRouter) Close() error {
 	err := r.controller.Close()
-	r.appLogger.Error("controller.Close failed: ", zap.Error(err))
+	r.appLogger.Error("service.Close failed: ", zap.Error(err))
 	return r.App.Shutdown()
 }
 
@@ -71,12 +71,12 @@ func (r *HttpRouter) Register(ctx *fiber.Ctx) error {
 	}
 	err = r.controller.CreateNewUser(ctx.Context(), request)
 	if errors.Is(err, database.ErrUserAlreadyExist) {
-		r.appLogger.Error("controller.CreateNewUser failed: ", zap.Error(err))
+		r.appLogger.Error("service.CreateNewUser failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Пользователь с таким ником уже существует"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.CreateNewUser failed: ", zap.Error(err))
+		r.appLogger.Error("service.CreateNewUser failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -98,17 +98,17 @@ func (r *HttpRouter) Login(ctx *fiber.Ctx) error {
 	}
 	token, err := r.controller.AuthorizeUser(ctx.Context(), request)
 	if errors.Is(err, database.ErrUserNotExist) {
-		r.appLogger.Error("controller.AuthorizeUser failed: ", zap.Error(err))
+		r.appLogger.Error("service.AuthorizeUser failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Неправильный логин или пароль"})
 	}
 	if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-		r.appLogger.Error("controller.AuthorizeUser failed: ", zap.Error(err))
+		r.appLogger.Error("service.AuthorizeUser failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Неправильный логин или пароль"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.AuthorizeUser failed: ", zap.Error(err))
+		r.appLogger.Error("service.AuthorizeUser failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -129,12 +129,12 @@ func (r *HttpRouter) GetUserStatus(ctx *fiber.Ctx) error {
 	}
 	user, err := r.controller.GetUserStatus(ctx.Context(), userId)
 	if errors.Is(err, database.ErrUserNotExist) {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Пользователя с таким id несуществует"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -145,7 +145,7 @@ func (r *HttpRouter) GetUserStatus(ctx *fiber.Ctx) error {
 func (r *HttpRouter) GetLeaderBoard(ctx *fiber.Ctx) error {
 	topUsers, err := r.controller.GetTopUsers(ctx.Context())
 	if err != nil {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -177,22 +177,22 @@ func (r *HttpRouter) CompleteTask(ctx *fiber.Ctx) error {
 	}
 	reward, err := r.controller.CompleteTask(ctx.Context(), userId, taskRequest.TaskId)
 	if errors.Is(err, database.ErrUserNotExist) {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Пользователя с таким id несуществует"})
 	}
 	if errors.Is(err, database.ErrTaskNotExist) {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Задания с таким id несуществует"})
 	}
 	if errors.Is(err, database.ErrAlreadyCompletedTask) {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Пользователь уже выполнил это задание"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -224,12 +224,12 @@ func (r *HttpRouter) Referrer(ctx *fiber.Ctx) error {
 	}
 	err = r.controller.Referrer(ctx.Context(), userId, referrerRequest.ReferrerCode)
 	if errors.Is(err, database.ErrUserNotExist) {
-		r.appLogger.Error("controller.Referrer failed: ", zap.Error(err))
+		r.appLogger.Error("service.Referrer failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Такого реферального кода не существует"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.GetUserStatus failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetUserStatus failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -253,12 +253,12 @@ func (r *HttpRouter) CreateTask(ctx *fiber.Ctx) error {
 
 	id, err := r.controller.CreateNewTask(ctx.Context(), request)
 	if errors.Is(err, database.ErrTaskAlreadyExist) {
-		r.appLogger.Error("controller.CreateNewTask failed: ", zap.Error(err))
+		r.appLogger.Error("service.CreateNewTask failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Задание с таким описанием уже существует"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.CreateNewTask failed: ", zap.Error(err))
+		r.appLogger.Error("service.CreateNewTask failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -293,12 +293,12 @@ func (r *HttpRouter) UpdateTaskReward(ctx *fiber.Ctx) error {
 
 	err = r.controller.UpdateTaskReward(ctx.Context(), taskId, request.Reward)
 	if errors.Is(err, database.ErrTaskNotExist) {
-		r.appLogger.Error("controller.UpdateTaskReward failed: ", zap.Error(err))
+		r.appLogger.Error("service.UpdateTaskReward failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Задания с таким id несуществует"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.UpdateTaskReward failed: ", zap.Error(err))
+		r.appLogger.Error("service.UpdateTaskReward failed: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -309,7 +309,7 @@ func (r *HttpRouter) UpdateTaskReward(ctx *fiber.Ctx) error {
 func (r *HttpRouter) GetAllTasks(ctx *fiber.Ctx) error {
 	tasks, err := r.controller.GetAllTasks(ctx.Context())
 	if err != nil {
-		r.appLogger.Error("controller.GetAllTasks: ", zap.Error(err))
+		r.appLogger.Error("service.GetAllTasks: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
@@ -329,12 +329,12 @@ func (r *HttpRouter) GetTask(ctx *fiber.Ctx) error {
 	}
 	task, err := r.controller.GetTask(ctx.Context(), taskId)
 	if errors.Is(err, database.ErrTaskNotExist) {
-		r.appLogger.Error("controller.GetTask failed: ", zap.Error(err))
+		r.appLogger.Error("service.GetTask failed: ", zap.Error(err))
 		ctx.Status(http.StatusBadRequest)
 		return ctx.JSON(fiber.Map{"status": "error", "message": "Задания с таким id несуществует"})
 	}
 	if err != nil {
-		r.appLogger.Error("controller.GetTask: ", zap.Error(err))
+		r.appLogger.Error("service.GetTask: ", zap.Error(err))
 		ctx.Status(http.StatusInternalServerError)
 		return ctx.JSON(fiber.Map{"status": "error", "message": internalServerErrorMessage})
 	}
